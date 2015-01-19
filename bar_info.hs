@@ -22,6 +22,12 @@ volParser = parse inBrackets "failure"
             anyToken
             manyTill anyChar (string "%")
 
+avg :: [Double] -> Double
+avg xs = (sum xs) / (fromIntegral $ Prelude.length xs) 
+
+str2doubles :: [String] -> [Double]
+str2doubles = Prelude.map read
+
 
 main :: IO ()
 main = shelly $ silently $ do
@@ -48,4 +54,9 @@ main = shelly $ silently $ do
                            Right str -> str
                            Left error -> show error
         echo $ pack volLevel
+
+        cpuList <- run "ps" ["-eo", "pcpu"]
+        let cpu = sum $ str2doubles $ Prelude.map unpack $ Prelude.tail $ Prelude.map strip $ T.lines $ strip cpuList
+        echo $ pack $ show cpu
+
 
