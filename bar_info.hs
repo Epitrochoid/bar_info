@@ -2,7 +2,7 @@
 {-# LANGUAGE ExtendedDefaultRules #-}
 
 import Shelly
-import Data.Text as T
+import Data.Text as T hiding (map, tail)
 import Text.ParserCombinators.Parsec
 import Text.ParserCombinators.Parsec.Token as P
 import Data.Time
@@ -22,11 +22,12 @@ volParser = parse inBrackets "failure"
             anyToken
             manyTill anyChar (string "%")
 
-avg :: [Double] -> Double
-avg xs = (sum xs) / (fromIntegral $ Prelude.length xs) 
-
 str2doubles :: [String] -> [Double]
-str2doubles = Prelude.map read
+str2doubles = map read
+
+-- Sums output from the command ps, used for cpu and mem
+psOutSum :: Text -> Int
+psOutSum text = round $ sum $ str2doubles $ map unpack $ tail $ map strip $ T.lines text
 
 
 main :: IO ()
@@ -56,7 +57,11 @@ main = shelly $ silently $ do
         echo $ pack volLevel
 
         cpuList <- run "ps" ["-eo", "pcpu"]
-        let cpu = sum $ str2doubles $ Prelude.map unpack $ Prelude.tail $ Prelude.map strip $ T.lines $ strip cpuList
+        let cpu = psOutSum $ strip cpuList
         echo $ pack $ show cpu
+
+        memList <- run "ps" ["-eo", "pmem"]
+        let mem = psOutSum $ strip memList
+        echo $ pack $ show mem
 
 
