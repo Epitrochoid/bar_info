@@ -27,7 +27,7 @@ str2doubles = map read
 
 -- Sums output from the command ps, used for cpu and mem
 psOutSum :: Text -> Int
-psOutSum text = round $ sum $ str2doubles $ map unpack $ tail $ map strip $ T.lines text
+psOutSum = round . sum . str2doubles . map unpack . tail . map strip . T.lines
 
 
 main :: IO ()
@@ -60,8 +60,8 @@ main = shelly $ silently $ do
         let cpu = psOutSum $ strip cpuList
         echo $ pack $ show cpu
 
-        memList <- run "ps" ["-eo", "pmem"]
-        let mem = psOutSum $ strip memList
-        echo $ pack $ show mem
+        pmemList <- run "ps" ["-eo", "pmem"]
+        let pmem = psOutSum $ strip pmemList
+        echo $ pack $ show pmem
 
 
