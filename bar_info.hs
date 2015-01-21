@@ -22,6 +22,16 @@ volParser = parse inBrackets "failure"
             anyToken
             manyTill anyChar (string "%")
 
+numParser :: String -> Int
+numParser input = case (parse numonly "failure" input) of
+                Right str -> read str
+                Left _ -> 0
+    where
+        numonly = do
+            skipMany (noneOf "0123456789")
+            many1 digit
+
+
 str2doubles :: [String] -> [Double]
 str2doubles = map read
 
@@ -63,5 +73,9 @@ main = shelly $ silently $ do
         pmemList <- run "ps" ["-eo", "pmem"]
         let pmem = psOutSum $ strip pmemList
         echo $ pack $ show pmem
+
+        curDesktop <- run "xprop" ["-root", "_NET_CURRENT_DESKTOP"]
+        let currentDesktop = numParser $ unpack $ strip curDesktop
+        echo $ pack $ show currentDesktop
 
 
