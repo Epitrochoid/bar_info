@@ -78,4 +78,8 @@ main = shelly $ silently $ do
         let currentDesktop = numParser $ unpack $ strip curDesktop
         echo $ pack $ show currentDesktop
 
+        deskNum <- run "xprop" ["-root", "_NET_NUMBER_OF_DESKTOPS"]
+        let desktopNumber = numParser $ unpack $ strip deskNum
+        echo $ pack $ show desktopNumber
+
 
