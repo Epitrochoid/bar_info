@@ -39,6 +39,13 @@ str2doubles = map read
 psOutSum :: Text -> Int
 psOutSum = round . sum . str2doubles . map unpack . tail . map strip . T.lines
 
+buildDeskText :: (Text, Text, Text, Text) -> Int -> Int -> Text
+buildDeskText (act, inact, color1, color2) current total = "<" `append` before `append` cur `append` after `append` ">"
+    where
+        before = T.replicate (current - 1) (color2 `append` inact)
+        cur = color1 `append` act
+        after = T.replicate (total - current - 1) (color2 `append` inact)
+
 
 main :: IO ()
 main = shelly $ silently $ do
@@ -81,5 +88,10 @@ main = shelly $ silently $ do
         deskNum <- run "xprop" ["-root", "_NET_NUMBER_OF_DESKTOPS"]
         let desktopNumber = numParser $ unpack $ strip deskNum
         echo $ pack $ show desktopNumber
+
+        let color2 = "%{F#ff42413f}"
+        let color1 = "%{F#ff8a8987}"
+        let deskText = buildDeskText ("↑", "↓", color1, color2) currentDesktop desktopNumber
+        echo deskText
 
 
