@@ -67,7 +67,7 @@ main = shelly $ silently $ do
         -- A bit of a kludge mixing parsec with prelude
         let volLevel = pack $ case (volParser $ Prelude.last $ Prelude.lines $ show volLvl) of
                            Right str -> str
-                           Left error -> show error
+                           Left _ -> show ""
 
         cpuList <- run "ps" ["-eo", "pcpu"]
         let cpu = pack $ show $ psOutSum $ strip cpuList
@@ -91,6 +91,9 @@ main = shelly $ silently $ do
                      , color1, pack "VOL: ", color2, volLevel, pack "%% "
                      , color1, pack "BAT: ", color2, batCharging, batLevel, pack "%%"]
         echo $ T.concat output
+
+        sleep 1
+        liftIO main
 
 
 
