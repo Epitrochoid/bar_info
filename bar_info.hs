@@ -42,7 +42,7 @@ psOutSum = round . sum . str2doubles . map unpack . tail . map strip . T.lines
 buildDeskText :: (Text, Text, Text, Text) -> Int -> Int -> Text
 buildDeskText (act, inact, color1, color2) current total = "<" `append` before `append` cur `append` after `append` ">"
     where
-        before = T.replicate (current - 1) (color2 `append` inact)
+        before = T.replicate current (color2 `append` inact)
         cur = color1 `append` act
         after = T.replicate (total - current - 1) (color2 `append` inact)
 
@@ -50,48 +50,48 @@ buildDeskText (act, inact, color1, color2) current total = "<" `append` before `
 main :: IO ()
 main = shelly $ silently $ do
         time <- liftIO getZonedTime
-        let timestring = case (clockParser $ show time) of
+        let timestring = pack $ case (clockParser $ show time) of
                              Right str -> str
                              Left _ -> ""
-        echo $ pack timestring
 
         batLvl <- readfile "/sys/class/power_supply/BAT0/capacity"
         let batLevel = strip batLvl
-        echo batLevel
 
         batChrg <- readfile "/sys/class/power_supply/BAT0/status"
-        let batCharging = case (unpack $ strip batChrg) of
-                           "Unknown" -> True
-                           "Discharging" -> False
-                           _ -> False
-        echo $ pack $ show batCharging
+        let batCharging = pack $ case (unpack $ strip batChrg) of
+                           "Unknown" -> "↑"
+                           "Discharging" -> "↓"
+                           _ -> ""
 
         volLvl <- run "amixer" ["get", "Master"]
         -- A bit of a kludge mixing parsec with prelude
-        let volLevel = case (volParser $ Prelude.last $ Prelude.lines $ show volLvl) of
+        let volLevel = pack $ case (volParser $ Prelude.last $ Prelude.lines $ show volLvl) of
                            Right str -> str
                            Left error -> show error
-        echo $ pack volLevel
 
         cpuList <- run "ps" ["-eo", "pcpu"]
-        let cpu = psOutSum $ strip cpuList
-        echo $ pack $ show cpu
+        let cpu = pack $ show $ psOutSum $ strip cpuList
 
         pmemList <- run "ps" ["-eo", "pmem"]
-        let pmem = psOutSum $ strip pmemList
-        echo $ pack $ show pmem
+        let pmem = pack $ show $ psOutSum $ strip pmemList
 
         curDesktop <- run "xprop" ["-root", "_NET_CURRENT_DESKTOP"]
         let currentDesktop = numParser $ unpack $ strip curDesktop
-        echo $ pack $ show currentDesktop
 
         deskNum <- run "xprop" ["-root", "_NET_NUMBER_OF_DESKTOPS"]
         let desktopNumber = numParser $ unpack $ strip deskNum
-        echo $ pack $ show desktopNumber
 
         let color2 = "%{F#ff42413f}"
         let color1 = "%{F#ff8a8987}"
         let deskText = buildDeskText ("↑", "↓", color1, color2) currentDesktop desktopNumber
-        echo deskText
+
+        let output = [color1, deskText, pack "%{c}", color2, timestring, pack "%{r}"
+                     , color1, pack "CPU: ", color2, cpu, pack "%% "
+                     , color1, pack "PMEM: ", color2, pmem, pack "%% "
+                     , color1, pack "VOL: ", color2, volLevel, pack "%% "
+                     , color1, pack "BAT: ", color2, batCharging, batLevel, pack "%%"]
+        echo $ T.concat output
+
+
 
 
